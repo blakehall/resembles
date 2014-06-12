@@ -2,6 +2,7 @@
 // Core node modules.
 var fs = require('fs'),
     exec = require('child_process').exec,
+    os = require('os'),
     url = require('url');
 
 // NPM Packages.
@@ -13,10 +14,9 @@ var program = require('commander'),
 program
   .version('0.0.1')
   .option('-d, --dimensions <size>', 'The dimensions to use for the viewport (default: 2550x1680) ')
-  .option('-o, --output <output>', 'The directory to use to save the image files. (default: /tmp)')
+  .option('-o, --output <output>', 'The directory to use to save the image files. (default: os.tmpdir())')
   .option('-p, --port <port>', 'The port to use for PhantomJS')
   .parse(process.argv);
-
 
 // Check to make sure we have two paths as arguments and if not show help text and exit.
 if (program.args.length !== 2) {
@@ -34,7 +34,7 @@ if (!validator.isURL(firstUrl) || !validator.isURL(secondUrl)) {
 }
 
 // Make sure our output directory is writeable, or fail early.
-var outputDirectory = program.output || '/tmp';
+var outputDirectory = program.output || os.tmpdir().substring(0, os.tmpdir().length - 1);
 if (!fs.existsSync(outputDirectory)) {
   console.error('Please make sure %s exists and is writeable, or specify another output directory.', outputDirectory);
   process.exit(1);
@@ -54,7 +54,6 @@ exec('which phantomjs', function(err, stdout) {
   var dimensions = outputDimensions.split('x');
   var viewportWidth = dimensions[0];
   var viewportHeight = dimensions[1];
-
 
   var firstUrlImage = outputDirectory + '/' + imageFileName(firstUrl, outputDimensions);
   var secondUrlImage = outputDirectory + '/' + imageFileName(secondUrl, outputDimensions);

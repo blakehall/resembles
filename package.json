@@ -1,0 +1,25 @@
+{
+  "name": "resembles",
+  "version": "0.0.1",
+  "description": "A small CLI wrapper around resemble.js",
+  "main": "resembles",
+  "author": "blakehall",
+  "repository": {
+    "type" :"git",
+    "url" : "git://github.com/blakehall/resembles.git"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "resemble.js",
+    "css-regression"
+  ],
+  "dependencies": {
+    "commander": "~2.2.0",
+    "phantom": "~0.6.3",
+    "resemble": "~1.0.3",
+    "validator": "~3.14.1"
+  }
+}
