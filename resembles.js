@@ -7,7 +7,8 @@ var fs = require('fs'),
 // NPM Packages.
 var program = require('commander'),
     phantom = require('phantom'),
-    resemble = require('resemble');
+    resemble = require('resemble'),
+    validator = require('validator');
 
 program
   .version('0.0.1')
@@ -25,8 +26,12 @@ if (program.args.length !== 2) {
 }
 
 // Make sure the urls provided are valid.
-var firstUrl = program.args[0];
-var secondUrl = program.args[1];
+var firstUrl = validateUrl(program.args[0]);
+var secondUrl = validateUrl(program.args[1]);
+if (!validator.isURL(firstUrl) || !validator.isURL(secondUrl)) {
+  console.error('Please specify two valid paths for comparison');
+  process.exit(1);
+}
 
 // Make sure our output directory is writeable, or fail early.
 var outputDirectory = program.output || '/tmp';
@@ -44,9 +49,6 @@ exec('which phantomjs', function(err, stdout) {
 
   // If we have two paths, and phantomjs good to go take some screenshots.
   var port = program.port || 12345;
-  var firstUrlImage = outputDirectory + '/' + firstUrl.replace('http://', '').replace('/', '_') + '.png';
-  var secondUrlImage = outputDirectory + '/' + secondUrl.replace('http://', '').replace('/', '_') + '.png';
-  var diffImagePath = outputDirectory + '/diff.png';
   // We need to split the output dimensions by width and height.
   var outputDimensions = program.dimensions || '2550x1880';
   var dimensions = outputDimensions.split('x');
@@ -54,35 +56,21 @@ exec('which phantomjs', function(err, stdout) {
   var viewportHeight = dimensions[1];
 
 
-  // Make sure the paths are proper urls, or normalize them.
-  if (url.parse(firstUrl).host === null) {
-    // Try adding an 'http://' to the url to see if that works.
-    if (url.parse('http://' + firstUrl).host !== null) {
-      firstUrl = 'http://' + firstUrl;
-    }
-    else {
-      console.error('%s is not a valid url', firstUrl);
-      process.exit(1);
-    }
-  }
-  if (url.parse(secondUrl).host === null) {
-    // Try adding an 'http://' to the url to see if that works.
-    if (url.parse('http://' + secondUrl).host !== null) {
-      secondUrl = 'http://' + secondUrl;
-    }
-    else {
-      console.error('%s is not a valid url', secondUrl);
-      process.exit(1);
-    }
-  }
+  var firstUrlImage = outputDirectory + '/' + imageFileName(firstUrl, outputDimensions);
+  var secondUrlImage = outputDirectory + '/' + imageFileName(secondUrl, outputDimensions);
+  var diffImagePath = outputDirectory + '/' + outputDimensions + '_diff.png';
 
+  // Start up a phantomjs browser (ignoring ssl issues).
   phantom.create('--web-security=no', '--ignore-ssl-errors=yes', { "port": port }, function(ph) {
     console.log('PhantomJS Browser started.');
 
+    // Create and open a page for our first url.
     ph.createPage(function(page) {
       page.open(firstUrl, function(status) {
         if (status == 'success') {
+          // Set the viewport to the desired dimensions.
           page.set('viewportSize', { width: viewportWidth, height: viewportHeight }, function(status) {
+            // and save the screenshot.
             page.render(firstUrlImage, function(err, status) {
               console.log(firstUrl + ' captured.');
 
@@ -116,3 +104,21 @@ exec('which phantomjs', function(err, stdout) {
     });
   });
 });
+
+// Take a url input, normalize it to add http:// if it's missing, since it's needed by phantomjs.
+function validateUrl(path) {
+  if (url.parse(path).host === null) {
+    // Try adding an 'http://' to the url to see if that works.
+    if (url.parse('http://' + path).host !== null) {
+      path = 'http://' + path;
+    }
+  }
+
+  return path;
+}
+
+// For a given url, strip the 'http://' replace any other path '/'s with
+// underscores and add dimension information so we can keep breakpoints straight.
+function imageFileName(fullUrl, dimensions) {
+  return fullUrl.replace('http://', '').replace('/', '_') + '_' + dimensions + '.png';
+}
