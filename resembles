@@ -8,8 +8,9 @@ var fs = require('fs'),
 // NPM Packages.
 var program = require('commander'),
     phantom = require('phantom'),
-    resemble = require('resemble'),
+    resemblejs = require('resemble'),
     validator = require('validator');
+
 
 program
   .version('0.0.1')
@@ -29,8 +30,8 @@ if (program.args.length !== 2) {
 var firstUrl = validateUrl(program.args[0]);
 var secondUrl = validateUrl(program.args[1]);
 if (!validator.isURL(firstUrl) || !validator.isURL(secondUrl)) {
-  console.error('Please specify two valid paths for comparison');
-  process.exit(1);
+//  console.error('Please specify two valid paths for comparison');
+//  process.exit(1);
 }
 
 // Make sure our output directory is writeable, or fail early.
@@ -65,40 +66,48 @@ exec('which phantomjs', function(err, stdout) {
 
     // Create and open a page for our first url.
     ph.createPage(function(page) {
-      page.open(firstUrl, function(status) {
-        if (status == 'success') {
-          // Set the viewport to the desired dimensions.
-          page.set('viewportSize', { width: viewportWidth, height: viewportHeight }, function(status) {
+      // Set the viewport to the desired dimensions.
+      page.set('viewportSize', { width: viewportWidth, height: viewportHeight }, function(status) {
+        page.open(firstUrl, function(status) {
+          if (status == 'success') {
             // and save the screenshot.
             page.render(firstUrlImage, function(err, status) {
               console.log(firstUrl + ' captured.');
 
               // Now get the image for the second site.
               page.open(secondUrl, function(status) {
-                page.set('viewportSize', { width: viewportWidth, height: viewportHeight }, function(status) {
-                  page.render(secondUrlImage, function(err, status) {
-                    console.log(secondUrl + ' captured.');
-                    // Close our page.
-                    page.close();
-                    // Exit PhantomJS
-                    ph.exit();
-                    // Generate our diff image with resemble.
-                    resemble.resemble(firstUrlImage).compareTo(secondUrlImage).ignoreNothing().onComplete(function(data) {
-                      var diffImage = data.getImageDataUrl().replace(/^data:image\/png;base64,/,"");
+                page.render(secondUrlImage, function(err, status) {
+                  console.log(secondUrl + ' captured.');
+                  // Close our page.
+                  page.close();
+                  // Exit PhantomJS
+                  ph.exit();
+                  // Generate our diff image with resemble.
+                  resemblejs.resemble.outputSettings({
+                    errorColor: {
+                      red: 0,
+                      green: 255,
+                      blue: 255
+                    },
+                    errorType: 'movement',
+                    transparency: 0.3
+                  });
 
-                      // Write the diff file to disk.
-                      fs.writeFile(diffImagePath, diffImage, 'base64', function(err) {
-                        if (err) throw err;
+                  resemblejs.resemble(firstUrlImage).compareTo(secondUrlImage).ignoreNothing().onComplete(function(data) {
+                    var diffImage = data.getImageDataUrl().replace(/^data:image\/png;base64,/,"");
 
-                        console.log('Your diff has been saved to %s', diffImagePath);
-                      });
+                    // Write the diff file to disk.
+                    fs.writeFile(diffImagePath, diffImage, 'base64', function(err) {
+                      if (err) throw err;
+
+                      console.log('Your diff has been saved to %s', diffImagePath);
                     });
                   });
                 });
               });
             });
-          });
-        }
+          }
+        });
       });
     });
   });
