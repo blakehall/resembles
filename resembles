@@ -29,9 +29,9 @@ if (program.args.length !== 2) {
 // Make sure the urls provided are valid.
 var firstUrl = validateUrl(program.args[0]);
 var secondUrl = validateUrl(program.args[1]);
-if (!validator.isURL(firstUrl) || !validator.isURL(secondUrl)) {
-//  console.error('Please specify two valid paths for comparison');
-//  process.exit(1);
+if (!validator.isURL(firstUrl, { allow_underscores: true }) || !validator.isURL(secondUrl, { allow_underscores: true })) {
+  console.error('Please specify two valid paths for comparison');
+  process.exit(1);
 }
 
 // Make sure our output directory is writeable, or fail early.

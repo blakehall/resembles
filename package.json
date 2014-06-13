@@ -20,6 +20,6 @@
     "commander": "~2.2.0",
     "phantom": "~0.6.3",
     "resemble": "~1.0.3",
-    "validator": "~3.14.1"
+    "validator": "~3.16.0"
   }
 }
