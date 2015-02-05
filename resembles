@@ -35,7 +35,7 @@ if (!validator.isURL(firstUrl, { allow_underscores: true }) || !validator.isURL(
 }
 
 // Make sure our output directory is writeable, or fail early.
-var outputDirectory = program.output || os.tmpdir().substring(0, os.tmpdir().length - 1);
+var outputDirectory = program.output || os.tmpdir().replace(/\/$/, '');
 if (!fs.existsSync(outputDirectory)) {
   console.error('Please make sure %s exists and is writeable, or specify another output directory.', outputDirectory);
   process.exit(1);
